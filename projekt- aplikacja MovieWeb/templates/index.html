@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Collection</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+</head>
+<body>
+    <div class="search-reset">
+        <h1>Search Movies</h1>
+        <form action="/search" method="post">
+            <input type="text" name="query" id="query" placeholder="Search by title or genre from your movie list..." autocomplete="off">
+            <button type="submit">Search</button>
+            <button type="button" onclick="window.location.href='/'">Reset Sorting</button>
+        </form>
+    </div>
+    <h1>Movie Collection</h1>
+    <div class="container">
+        <div class="left-side">
+            <div class="movie">
+                <h2>Movie List</h2>
+                <ul>
+                    {% for movie in movies %}
+                        <li>
+                            <h3>{{ movie.title }}</h3>
+                            <p><strong>Genre:</strong> {{ movie.genre }}</p>
+                            <p><strong>Rating ⭐:</strong> {{ movie.rating }}</p>
+                            <button class="edit-button"><a href="/edit_movie/{{ movie.id }}" style="text-decoration: none; color: #fff;">Edit</a></button>
+                            <button class="delete-button"><a href="/delete_movie/{{ movie.id }}" style="text-decoration: none; color: #fff;">Delete</a></button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="right-side">
+            <h2>Add New Movie</h2>
+            <form action="/add_movie" method="post">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required autocomplete="off"><br><br>
+                <div id="title-suggestions"></div> <!-- Sugestie tytułów -->
+                <label for="genre">Genre:</label>
+                <input type="text" id="genre" name="genre" required autocomplete="off"><br><br>
+                <div id="genre-suggestions"></div> <!-- Sugestie gatunków -->
+                <label for="rating">Rating:</label>
+                <input type="number" id="rating" name="rating" min="0" max="10" step="0.1" required><br><br>
+                <button type="submit">Add Movie</button>
+            </form>
+        </div>
+    </div>
+    
+
+    <script>
+    $(document).ready(function(){
+        $('#title, #genre').keyup(function(){
+            var query = $(this).val();
+            var field = $(this).attr('id');
+            if(query !== ''){
+                $.ajax({
+                    url: 'http://www.omdbapi.com/',
+                    method: 'GET',
+                    data: {
+                        s: query,
+                        apikey: '19253a3f' // KEY API OMDB
+                    },
+                    success: function(response){
+                        var suggestions = response.Search;
+                        var html = '';
+                        if(suggestions){
+                            suggestions.forEach(function(movie){
+                                html += '<div class="suggestion" data-title="' + movie.Title + '">' + movie.Title + '</div>';
+                            });
+                        } else {
+                            html = '<div class="no-suggestions">No suggestions found</div>';
+                        }
+                        $('#' + field + '-suggestions').html(html);
+                    }
+                });
+            } else {
+                $('#' + field + '-suggestions').html('');
+            }
+        });
+    
+        //  klikanie na sugestie
+        $(document).on('click', '.suggestion', function(){
+            var title = $(this).data('title');
+            $('#title').val(title);
+            var query = $(this).data('title');
+            $.ajax({
+                url: 'http://www.omdbapi.com/',
+                method: 'GET',
+                data: {
+                    t: query,
+                    apikey: '19253a3f' // API KEY OMDB
+                },
+                success: function(response){
+                    var genre = response.Genre;
+                    $('#genre').val(genre);
+                    $('#genre-suggestions').html('');
+                }
+            });
+            $('#title-suggestions').html('');
+        });
+    });
+    </script>
+</body>
+
+</html>
